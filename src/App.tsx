@@ -34,7 +34,18 @@ const initial: State = {
 
 export default function App() {
   const [s, setS] = useState<State>(initial);
+  const [copied, setCopied] = useState<string | null>(null);
   const update = useCallback((p: Partial<State>) => setS((x) => ({ ...x, ...p })), []);
+
+  const copyPath = useCallback(async (path: string) => {
+    try {
+      await navigator.clipboard.writeText(path);
+      setCopied(path);
+      setTimeout(() => setCopied(null), 1500);
+    } catch {
+      // 剪贴板权限被拒时静默失败
+    }
+  }, []);
 
   const loadDefaultLook = useCallback(async () => {
     try {
@@ -231,38 +242,56 @@ export default function App() {
 
           {/* 输出信息 · 生成文件 + 安装路径 */}
           <section className="panel flex shrink-0 flex-col gap-2 p-4">
-            <h2 className="section-title">输出</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="section-title">输出</h2>
+              {s.installed && (
+                <button
+                  className="text-[10px] text-dim transition hover:text-accent"
+                  onClick={() => void api.openProfileFolder()}
+                >
+                  打开文件夹
+                </button>
+              )}
+            </div>
             {s.result ? (
-              <div className="space-y-2 text-xs">
-                <div>
-                  <div className="text-dim mb-0.5">生成文件</div>
-                  <div className="truncate font-mono text-[11px]" title={s.result.out_dcp}>
+              <div className="min-w-0 space-y-2">
+                <button
+                  className="min-w-0 w-full text-left"
+                  onClick={() => void copyPath(s.result!.out_dcp)}
+                >
+                  <div className="mb-0.5 flex items-center gap-1 text-[10px] text-dim">
+                    <span>生成文件</span>
+                    <span className="opacity-60">
+                      {copied === s.result.out_dcp ? "已复制" : "点击复制"}
+                    </span>
+                  </div>
+                  <div className="truncate font-mono text-[11px] leading-tight">
                     {s.result.out_dcp.split("/").pop()}
                   </div>
-                  <div className="truncate text-[10px] text-dim opacity-70" title={s.result.out_dcp}>
-                    {s.result.out_dcp}
-                  </div>
-                </div>
+                </button>
                 {s.installed ? (
-                  <div>
-                    <div className="text-dim mb-0.5">Photoshop 安装位置</div>
-                    <div className="break-all font-mono text-[10px] text-ok">
-                      {s.installed.path}
+                  <button
+                    className="min-w-0 w-full text-left"
+                    onClick={() => void copyPath(s.installed!.path)}
+                  >
+                    <div className="mb-0.5 flex items-center gap-1 text-[10px] text-dim">
+                      <span>已安装到</span>
+                      <span className="opacity-60">
+                        {copied === s.installed.path ? "已复制" : "点击复制"}
+                      </span>
                     </div>
-                  </div>
+                    <div className="truncate font-mono text-[10px] leading-tight text-ok">
+                      {s.installed.path.split("/").pop()}
+                    </div>
+                  </button>
                 ) : (
-                  <div className="text-dim opacity-70">尚未安装到 Photoshop</div>
+                  <div className="text-[10px] text-dim opacity-70">尚未安装到 Photoshop</div>
                 )}
               </div>
             ) : (
-              <div className="text-xs text-dim opacity-70">
+              <div className="text-[11px] leading-relaxed text-dim opacity-70">
                 移植完成后在此显示生成文件和安装路径
               </div>
-            )}
-            {s.installed && (
-              <button className="btn-ghost w-full mt-1" onClick={() => void api.openProfileFolder()}>
-                打开文件夹
-              </button>
             )}
           </section>
         </div>
