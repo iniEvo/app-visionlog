@@ -1,0 +1,120 @@
+name: Build & Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            label: macOS-AppleSilicon
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            label: macOS-Intel
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            label: Windows-x64
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend deps
+        run: pnpm install
+
+      - name: Build frontend
+        run: pnpm build
+
+      # Python sidecar for the engine
+      - name: Setup Python (macOS)
+        if: matrix.platform == 'macos-latest'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Python (Windows)
+        if: matrix.platform == 'windows-latest'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install engine deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy
+
+      # Tauri build
+      - name: Build (macOS)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          npx tauri build --target ${{ matrix.target }} \
+            --bundles app,dmg \
+            -c '{"bundle":{"icon":["icons/icon.icns","icons/icon.png"]}}'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ""
+
+      - name: Build (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: npx tauri build --target ${{ matrix.target }} --bundles nsis
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ""
+
+      - name: Collect artifacts (macOS)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          mkdir -p release
+          cp src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg release/ 2>/dev/null || true
+          cp src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.app release/ 2>/dev/null || true
+          ls release/
+
+      - name: Collect artifacts (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          mkdir release
+          Copy-Item src-tauri\target\${{ matrix.target }}\release\bundle\nsis\*.exe release\
+          dir release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: visionlog-${{ matrix.label }}
+          path: release/
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          draft: true
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

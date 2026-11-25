@@ -1,0 +1,4 @@
+engine/ 内的 dcp.py, pipeline.py, transfer.py, converter.py, accuracy.py, acr3_curve.txt
+fork 自 wrkxflw/extra-sauce (MIT License, https://github.com/wrkxflw/extra-sauce)
+原文件 Copyright (c) 2024 wrkxflw. 保留原版权声明于文件顶部。
+main.py 为本项目 sidecar 协议入口，不属 extra-sauce 源码。
