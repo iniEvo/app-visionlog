@@ -33,10 +33,9 @@ jobs:
         with:
           node-version: 20
 
+      # pnpm/action-setup v4 从 package.json 的 packageManager 字段自动读版本
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 11
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -49,20 +48,13 @@ jobs:
           workspaces: src-tauri
 
       - name: Install frontend deps
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build frontend
         run: pnpm build
 
       # Python sidecar for the engine
-      - name: Setup Python (macOS)
-        if: matrix.platform == 'macos-latest'
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Setup Python (Windows)
-        if: matrix.platform == 'windows-latest'
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -75,25 +67,17 @@ jobs:
       # Tauri build
       - name: Build (macOS)
         if: matrix.platform == 'macos-latest'
-        run: |
-          npx tauri build --target ${{ matrix.target }} \
-            --bundles app,dmg \
-            -c '{"bundle":{"icon":["icons/icon.icns","icons/icon.png"]}}'
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ""
+        run: npx tauri build --target ${{ matrix.target }} --bundles app,dmg
 
       - name: Build (Windows)
         if: matrix.platform == 'windows-latest'
         run: npx tauri build --target ${{ matrix.target }} --bundles nsis
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ""
 
       - name: Collect artifacts (macOS)
         if: matrix.platform == 'macos-latest'
         run: |
           mkdir -p release
-          cp src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg release/ 2>/dev/null || true
-          cp src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.app release/ 2>/dev/null || true
+          cp src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg release/
           ls release/
 
       - name: Collect artifacts (Windows)
