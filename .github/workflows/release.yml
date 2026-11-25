@@ -31,7 +31,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       # pnpm/action-setup v4 从 package.json 的 packageManager 字段自动读版本
       - name: Setup pnpm
