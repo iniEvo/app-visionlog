@@ -4,6 +4,11 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "要构建并发布的 tag（如 v0.1.1），留空则用当前 ref"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -85,20 +90,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "visionlog ${{ github.ref_name }}"
+          tagName: ${{ inputs.tag || github.ref_name }}
+          releaseName: "VisionLog Pro ${{ inputs.tag || github.ref_name }}"
           releaseBody: |
             ## 下载
 
-            - **macOS-AppleSilicon**: `.dmg` (M1/M2/M3/M4)
-            - **macOS-Intel**: `.dmg`
-            - **Windows**: `.exe` (x64)
+            - **macOS Apple Silicon**: `VisionLog.Pro_*_aarch64.dmg`
+            - **macOS Intel**: `VisionLog.Pro_*_x64.dmg`
+            - **Windows x64**: `VisionLog.Pro_*_x64-setup.exe` / `*.msi`
 
             ## 安装
 
-            1. 下载对应平台的安装包
-            2. macOS: 打开 `.dmg`，拖入 Applications
-            3. Windows: 运行 `.exe` 安装程序
+            1. macOS：双击 `.dmg` 挂载，把 VisionLog Pro 拖进「应用程序」
+            2. Windows：运行 `.exe` 或 `.msi` 安装
 
             ## 使用
 

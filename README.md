@@ -66,23 +66,28 @@ graph LR
 
 ## 下载
 
-### macOS
+全部产物在 [Releases · v0.1.1](https://github.com/iniEvo/app-visionlog/releases/tag/v0.1.1)。
 
-从 [GitHub Releases](https://github.com/iniEvo/app-visionlog/releases/latest) 下载 `.dmg`，双击挂载后把 **VisionLog Pro** 拖进「应用程序」。
+| 平台 | 架构 | 安装包 | 大小 |
+|---|---|---|---|
+| macOS | Apple Silicon | [VisionLog.Pro_0.1.0_aarch64.dmg](https://github.com/iniEvo/app-visionlog/releases/download/v0.1.1/VisionLog.Pro_0.1.0_aarch64.dmg) | 16.5 MB |
+| macOS | Intel | [VisionLog.Pro_0.1.0_x64.dmg](https://github.com/iniEvo/app-visionlog/releases/download/v0.1.1/VisionLog.Pro_0.1.0_x64.dmg) | 16.6 MB |
+| Windows | x64 | [VisionLog.Pro_0.1.0_x64-setup.exe](https://github.com/iniEvo/app-visionlog/releases/download/v0.1.1/VisionLog.Pro_0.1.0_x64-setup.exe) | 22.6 MB |
+| Windows | x64 | [VisionLog.Pro_0.1.0_x64_en-US.msi](https://github.com/iniEvo/app-visionlog/releases/download/v0.1.1/VisionLog.Pro_0.1.0_x64_en-US.msi) | 23.8 MB |
 
-直接下载：[VisionLog Pro v0.1.1（Apple Silicon）](https://github.com/iniEvo/app-visionlog/releases/download/v0.1.1/VisionLog-Pro_0.1.0_aarch64.dmg)
+**macOS 安装**：双击 `.dmg` 挂载，把 **VisionLog Pro** 拖进「应用程序」。
 
-| 平台 | 架构 | 状态 |
-|---|---|---|
-| macOS | Apple Silicon | ✅ [v0.1.1](https://github.com/iniEvo/app-visionlog/releases/tag/v0.1.1) |
-| macOS | Intel | 规划中（Tauri universal binary） |
-| Windows | x64 | 规划中 |
+**Windows 安装**：运行 `.exe`（NSIS 安装器）或 `.msi`，按向导完成后从开始菜单启动。
 
-> 应用未签名公证。首次打开若被系统拦截，请在「系统设置 → 隐私与安全性」中允许，或执行：
+> **macOS 未签名公证**：首次打开若被系统拦截，到「系统设置 → 隐私与安全性」点「仍要打开」，或执行：
 >
 > ```bash
 > xattr -dr com.apple.quarantine "/Applications/VisionLog Pro.app"
 > ```
+>
+> **Windows 未做代码签名**：SmartScreen 可能提示「已保护你的电脑」，点「更多信息 → 仍要运行」。
+
+> 所有平台的安装包都由 GitHub Actions 在对应系统的原生 runner 上构建，Python 引擎已用 PyInstaller 打成单文件，安装后无需另装 Python。
 
 ## 使用
 
@@ -163,7 +168,7 @@ visionlog/
 - 不内置 Adobe Standard DCP 字节（运行时读用户本机已装的，合规）
 - 不做 RAW 解码渲染预览（不做 mini-Lightroom）
 - 不替用户绕过任何 Look 的版权 — 工具只做转换，不提供盗版 Look 下载
-- Windows 版本尚未构建（代码已全平台兼容，CI 待配置）
+- 安装包均未做代码签名：macOS 需手动放行，Windows 会有 SmartScreen 提示
 
 ## 许可证
 
