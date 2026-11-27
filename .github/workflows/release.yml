@@ -68,6 +68,7 @@ jobs:
         run: pyinstaller engine.spec --noconfirm --clean
 
       - name: Move engine binary to src-tauri/binaries
+        shell: bash
         run: |
           mkdir -p src-tauri/binaries
           if [ "$RUNNER_OS" = "Windows" ]; then
