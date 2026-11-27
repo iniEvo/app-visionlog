@@ -38,8 +38,7 @@
       "icons/icon_512.png"
     ],
     "resources": [
-      "../engine/**/*",
-      "../assets/*"
+      "binaries/visionlog-engine"
     ]
   }
 }

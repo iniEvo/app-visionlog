@@ -1,6 +1,14 @@
 node_modules/
 dist/
 src-tauri/target/
-engine/.venv/
+engine/__pycache__/
 .DS_Store
 *.log
+
+# PyInstaller 构建产物（CI 上会重新构建）
+build/
+dist/
+*.spec.bak
+
+# 但保留 spec 文件
+!engine.spec

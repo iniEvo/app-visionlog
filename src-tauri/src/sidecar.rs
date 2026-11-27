@@ -53,17 +53,37 @@ fn engine_root() -> PathBuf {
     PathBuf::from("engine")
 }
 
-/// 优先用 engine/.venv 里的解释器（带 numpy）；回退系统 python3
-fn python_bin() -> String {
-    let venv = if cfg!(target_os = "windows") {
-        engine_root().join(".venv/Scripts/python.exe")
+/// 查找打包好的 visionlog-engine 二进制 sidecar
+///
+/// dev: src-tauri/binaries/visionlog-engine
+/// 打包: 同可执行目录或 Resources/
+fn packaged_engine_binary() -> Option<PathBuf> {
+    let names = if cfg!(target_os = "windows") {
+        &["visionlog-engine.exe"][..]
     } else {
-        engine_root().join(".venv/bin/python")
+        &["visionlog-engine"][..]
     };
-    if venv.exists() {
-        return venv.to_string_lossy().to_string();
+
+    let mut candidates: Vec<PathBuf> = Vec::new();
+
+    // dev: src-tauri/binaries/<name>
+    let dev = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("binaries");
+    for n in names {
+        candidates.push(dev.join(n));
     }
-    if cfg!(target_os = "windows") { "python".to_string() } else { "python3".to_string() }
+
+    // 打包后：当前 exe 同目录
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            for n in names {
+                candidates.push(dir.join(n));
+            }
+        }
+    }
+
+    // macOS: <Bundle>/Contents/Resources/visionlog-engine
+    // Linux/Windows: 已覆盖（exe 同目录或 Resources）
+    candidates.into_iter().find(|p| p.exists())
 }
 
 /// 跑一次移植（同进程异步包装），由 commands.rs 用 #[tauri::command] 再包装
@@ -105,19 +125,43 @@ async fn run_transfer_blocking(
 }
 
 /// 同步跑引擎，stdout 每行一个 JSON 事件
+///
+/// 优先用打包的 visionlog-engine 二进制（安装即用，无 Python 依赖）；
+/// 回退到源码运行（dev 环境，需要 python3 + numpy）。
 pub fn run_engine<F>(req: &TransferRequest, mut on_event: F) -> Result<EngineEvent, SidecarError>
 where
     F: FnMut(EngineEvent) -> Result<(), SidecarError> + Send + 'static,
 {
-    let script = engine_root().join("main.py");
-    if !script.exists() {
-        return Err(SidecarError::ScriptNotFound(script));
-    }
     let payload = serde_json::to_string(req)
         .map_err(|e| SidecarError::EngineFailed(e.to_string()))?;
 
-    let mut child: Child = Command::new(python_bin())
-        .arg(&script)
+    // 优先打包二进制
+    let mut cmd: Command = if let Some(bin) = packaged_engine_binary() {
+        Command::new(bin)
+    } else {
+        // 回退：源码 + python
+        let script = engine_root().join("main.py");
+        if !script.exists() {
+            return Err(SidecarError::ScriptNotFound(script));
+        }
+        let venv = engine_root().join(if cfg!(target_os = "windows") {
+            ".venv/Scripts/python.exe"
+        } else {
+            ".venv/bin/python"
+        });
+        let py = if venv.exists() {
+            venv.to_string_lossy().to_string()
+        } else if cfg!(target_os = "windows") {
+            "python".to_string()
+        } else {
+            "python3".to_string()
+        };
+        let mut c = Command::new(py);
+        c.arg(&script);
+        c
+    };
+
+    let mut child: Child = cmd
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
