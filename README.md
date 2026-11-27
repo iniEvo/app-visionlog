@@ -68,13 +68,21 @@ graph LR
 
 ### macOS
 
-从 [GitHub Releases](https://github.com/iniEvo/app-visionlog/releases) 下载 `.dmg`，双击拖进 Applications。
+从 [GitHub Releases](https://github.com/iniEvo/app-visionlog/releases/latest) 下载 `.dmg`，双击挂载后把 **VisionLog Pro** 拖进「应用程序」。
+
+直接下载：[VisionLog Pro v0.1.1（Apple Silicon）](https://github.com/iniEvo/app-visionlog/releases/download/v0.1.1/VisionLog-Pro_0.1.0_aarch64.dmg)
 
 | 平台 | 架构 | 状态 |
 |---|---|---|
-| macOS | Apple Silicon | ✅ 已构建 |
+| macOS | Apple Silicon | ✅ [v0.1.1](https://github.com/iniEvo/app-visionlog/releases/tag/v0.1.1) |
 | macOS | Intel | 规划中（Tauri universal binary） |
 | Windows | x64 | 规划中 |
+
+> 应用未签名公证。首次打开若被系统拦截，请在「系统设置 → 隐私与安全性」中允许，或执行：
+>
+> ```bash
+> xattr -dr com.apple.quarantine "/Applications/VisionLog Pro.app"
+> ```
 
 ## 使用
 
