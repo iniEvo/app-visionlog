@@ -12,3 +12,10 @@ dist/
 
 # 但保留 spec 文件
 !engine.spec
+
+# 本地工具产物
+.trae-html-share-packages/
+
+# engine 二进制由 CI 构建（PyInstaller 产物不入库）
+src-tauri/binaries/
+src-tauri/data/

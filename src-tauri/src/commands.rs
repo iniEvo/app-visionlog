@@ -143,13 +143,63 @@ pub fn read_raw_camera(path: String) -> Result<rawmeta::RawCameraInfo, String> {
     rawmeta::read_camera_info(std::path::Path::new(&path)).map_err(|e| e.to_string())
 }
 
-/// 移植输出的默认目录（导出前给用户选保存位置时的起点）
+/// 移植输出的默认目录（放在应用数据目录，避免污染 CameraProfiles）
 #[tauri::command]
-pub fn export_dir() -> Result<String, String> {
-    let root = install::user_profile_root().map_err(|e| e.to_string())?;
-    let tmp = root.join("visionlog-out");
-    std::fs::create_dir_all(&tmp).map_err(|e| e.to_string())?;
-    Ok(tmp.to_string_lossy().to_string())
+pub fn export_dir(app: tauri::AppHandle) -> Result<String, String> {
+    let dir = app_output_dir(&app)?;
+    migrate_legacy_output(&dir);
+    Ok(dir.to_string_lossy().to_string())
+}
+
+/// 应用数据目录下的 output 文件夹
+fn app_output_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    use tauri::Manager;
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("output");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir)
+}
+
+/// 启动时迁移旧版 `CameraProfiles/visionlog-out`，并清掉空目录
+pub fn migrate_output_dir(app: &tauri::AppHandle) {
+    if let Ok(dir) = app_output_dir(app) {
+        migrate_legacy_output(&dir);
+    }
+}
+
+fn migrate_legacy_output(new_dir: &std::path::Path) {
+    let Ok(root) = install::user_profile_root() else { return };
+    let old = root.join("visionlog-out");
+    if !old.is_dir() { return; }
+
+    if let Ok(entries) = std::fs::read_dir(&old) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if !path.is_file() { continue; }
+            if !path
+                .extension()
+                .and_then(|e| e.to_str())
+                .is_some_and(|e| e.eq_ignore_ascii_case("dcp"))
+            {
+                continue;
+            }
+            let dest = new_dir.join(entry.file_name());
+            if dest.exists() {
+                // 新版目录已有同名文件，旧副本直接清理
+                let _ = std::fs::remove_file(&path);
+                continue;
+            }
+            if std::fs::rename(&path, &dest).is_err() {
+                if std::fs::copy(&path, &dest).is_ok() {
+                    let _ = std::fs::remove_file(&path);
+                }
+            }
+        }
+    }
+    let _ = std::fs::remove_dir(&old); // 非空时失败，忽略
 }
 
 /// 前端可调用：跑一次移植，事件实时推给前端

@@ -14,6 +14,12 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            // 清理旧版留在 CameraProfiles 里的生成目录与 .bak 文件
+            commands::migrate_output_dir(app.handle());
+            install::cleanup_legacy_backups_for("VisionLOG");
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             commands::inspect_dcp,
             commands::resolve_camera_matrix,
