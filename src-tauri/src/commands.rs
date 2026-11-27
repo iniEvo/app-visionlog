@@ -131,10 +131,12 @@ pub fn search_cameras(query: String) -> Vec<cameras::CameraEntry> {
         .collect()
 }
 
-/// 默认 look 源（工作目录里的 VisionLOG DCP，A7M5 优先）
+/// 默认 look 源（随包分发的 VisionLOG DCP，A7M5 优先）
 #[tauri::command]
-pub fn default_look_source() -> Option<String> {
-    cameras::default_look_source().map(|p| p.to_string_lossy().to_string())
+pub fn default_look_source(app: tauri::AppHandle) -> Option<String> {
+    use tauri::Manager;
+    let resource_dir = app.path().resource_dir().ok();
+    cameras::default_look_source(resource_dir.as_deref()).map(|p| p.to_string_lossy().to_string())
 }
 
 /// 读 RAW/DNG 样片的相机型号

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "visionlog",
+  "productName": "VisionLog Pro",
   "version": "0.1.0",
   "identifier": "com.visioncolor.visionlog",
   "build": {
@@ -38,7 +38,8 @@
       "icons/icon_512.png"
     ],
     "resources": [
-      "binaries/visionlog-engine*"
+      "binaries/visionlog-engine*",
+      "looks/*"
     ],
     "externalBin": []
   }

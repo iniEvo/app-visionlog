@@ -78,6 +78,13 @@ fn packaged_engine_binary() -> Option<PathBuf> {
             for n in names {
                 candidates.push(dir.join(n));
             }
+            // macOS: Contents/MacOS/visionlog → Contents/Resources/binaries/<name>
+            if let Some(resources) = dir.parent().map(|c| c.join("Resources")) {
+                for n in names {
+                    candidates.push(resources.join(n));
+                    candidates.push(resources.join("binaries").join(n));
+                }
+            }
         }
     }
 

@@ -19,3 +19,6 @@ dist/
 # engine 二进制由 CI 构建（PyInstaller 产物不入库）
 src-tauri/binaries/
 src-tauri/data/
+
+# Python virtualenv
+engine/.venv/

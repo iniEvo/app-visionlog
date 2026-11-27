@@ -276,14 +276,25 @@ pub fn matches(entry: &CameraEntry, tokens: &[String]) -> bool {
     })
 }
 
-/// 默认 look 源：工作目录里的 VisionLOG DCP（优先 A7M5）
-pub fn default_look_source() -> Option<PathBuf> {
-    let candidates = [
-        std::env::current_dir().ok(),
-        std::env::current_dir().ok().and_then(|p| p.parent().map(|x| x.to_path_buf())),
-    ];
+/// 默认 look 源：随包分发的 VisionLOG DCP（优先 A7M5）
+///
+/// 查找顺序：打包资源目录（`resources/looks`）→ 工作目录 → 工作目录父级。
+/// 打包后 cwd 是 `/`，只有资源目录可用。
+pub fn default_look_source(resource_dir: Option<&std::path::Path>) -> Option<PathBuf> {
+    let mut candidates: Vec<PathBuf> = Vec::new();
+    if let Some(dir) = resource_dir {
+        candidates.push(dir.join("looks"));
+        candidates.push(dir.to_path_buf());
+    }
+    if let Ok(cwd) = std::env::current_dir() {
+        candidates.push(cwd.clone());
+        if let Some(parent) = cwd.parent() {
+            candidates.push(parent.to_path_buf());
+        }
+    }
+
     let mut found: Vec<PathBuf> = Vec::new();
-    for dir in candidates.into_iter().flatten() {
+    for dir in candidates {
         let Ok(entries) = std::fs::read_dir(&dir) else { continue };
         for e in entries.flatten() {
             let name = e.file_name().to_string_lossy().to_string();
